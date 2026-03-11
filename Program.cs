@@ -77,63 +77,46 @@ namespace NTUJobHunter
         }
 
         static async Task ScanSite(SiteConfig site)
-        {
-            try
-            {
-                var handler = new HttpClientHandler
-                {
-                    AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
-                    ServerCertificateCustomValidationCallback = (m, c, ch, e) => true
-                };
+{
+    // 1. 強制換成 XML 入口，這在 GitHub 跑最穩
+    string targetUrl = site.Name.Contains("PTT") 
+        ? "https://www.ptt.cc/atom/NTU-Job.xml" 
+        : "https://www.ntu.edu.tw/spotlight/index.html";
 
-                using (var client = new HttpClient(handler))
-                {
-                    client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-                    client.DefaultRequestHeaders.TryAddWithoutValidation("Referer", "https://www.google.com/");
-
-                    // 徹底清洗網址，解決 404 的終極一招
-                    string cleanUrl = site.Url.Trim().Replace("\r", "").Replace("\n", "");
-                    var request = new HttpRequestMessage(HttpMethod.Get, cleanUrl);
-                    request.Headers.Add("Cookie", "over18=1");
-
-                    var response = await client.SendAsync(request);
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Console.WriteLine($"   ❌ {site.Name} 失敗: {response.StatusCode}");
-                        return;
-                    }
-
-                    string html = await response.Content.ReadAsStringAsync();
-                    HtmlDocument doc = new HtmlDocument();
-                    doc.LoadHtml(html);
-
-                    var links = doc.DocumentNode.SelectNodes("//a");
-                    if (links == null) return;
-
-                    foreach (var node in links)
-                    {
-                        string title = node.InnerText.Trim();
-                        string href = node.Attributes["href"]?.Value ?? "";
-                        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(href)) continue;
-
-                        bool isPttArticle = site.Url.Contains("ptt") && href.Contains("/M.");
-                        bool isNtuArticle = site.Url.Contains("ntu") && href.Contains("spotlight");
-
-                        if (isPttArticle || isNtuArticle)
-                        {
-                            string fullLink = new Uri(new Uri(cleanUrl), href).AbsoluteUri;
-                            string lowerTitle = title.ToLower();
-                            if (myKeywords.Any(k => lowerTitle.Contains(k)) && !excludeKeywords.Any(e => lowerTitle.Contains(e)))
-                            {
-                                Console.WriteLine($"✨ 命中：{title}");
-                                await SendLineMessage($"\n🌟 [{site.Name}] 發現好缺！\n\n標題：{title}\n連結：{fullLink}");
-                            }
-                        }
-                    }
-                }
+    try {
+        // 2. 簡化 Handler，XML 通常不需要複雜偽裝
+        using (var client = new HttpClient()) {
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+            var response = await client.GetAsync(targetUrl);
+            
+            if (!response.IsSuccessStatusCode) {
+                Console.WriteLine($"   ❌ {site.Name} 連線失敗: {response.StatusCode}");
+                return;
             }
-            catch (Exception ex) { Console.WriteLine($"❌ {site.Name} 異常: {ex.Message}"); }
+
+            string content = await response.Content.ReadAsStringAsync();
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(content);
+
+            // 3. XML 標籤解析邏輯
+            var nodes = site.Name.Contains("PTT") 
+                ? doc.DocumentNode.SelectNodes("//entry") 
+                : doc.DocumentNode.SelectNodes("//a");
+
+            if (nodes == null) return;
+
+            foreach (var node in nodes) {
+                string title = site.Name.Contains("PTT") ? node.SelectSingleNode(".//title")?.InnerText : node.InnerText;
+                string href = site.Name.Contains("PTT") ? node.SelectSingleNode(".//link")?.Attributes["href"]?.Value : node.Attributes["href"]?.Value;
+
+                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(href)) continue;
+
+                // 進行關鍵字比對... (後續邏輯維持原樣)
+                await CheckAndNotify(site.Name, title, href);
+            }
         }
+    } catch (Exception ex) { Console.WriteLine($"   ❌ {site.Name} 異常: {ex.Message}"); }
+}
 
         static async Task SendLineMessage(string msg)
         {
@@ -152,3 +135,4 @@ namespace NTUJobHunter
     class SiteConfig { public string Name; public string Url; }
 
 }
+
