@@ -14,7 +14,7 @@ namespace NTUJobHunter
         static string lineToken = Environment.GetEnvironmentVariable("LINE_TOKEN");
 
         // 2. 你的 Google 試算表 CSV 網址 (請填入你發布的 CSV 連結)
-        static string userConfigCsvUrl = "這裡貼上你的_GOOGLE_SHEET_CSV_發布網址";
+        static string userConfigCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjAdjergagVBidinxnQhq9c7hf64SEyOgOX85HtE4tNUvtlKVHTZr8wB6TUp5pVaS92fMp8ZhMfiny/pub?gid=1519632381&single=true&output=csv";
 
         // 3. 預填表單範本 (將 {0} 替換為 ID)
         static string magicLinkTemplate = "https://docs.google.com/forms/d/e/1FAIpQLScwgSg1tB2QdQKV4FXljTq1ujjfNxm5XVY7x456nYQugGFARA/viewform?usp=pp_url&entry.1698759269={0}";
@@ -150,4 +150,5 @@ namespace NTUJobHunter
         }
     }
     class SiteConfig { public string Name; public string Url; }
+
 }
