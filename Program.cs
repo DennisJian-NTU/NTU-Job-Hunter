@@ -12,7 +12,7 @@ namespace NTUJobHunter
         // ---------------- [ 雲端配置 ] ----------------
         static string lineToken = Environment.GetEnvironmentVariable("LINE_TOKEN");
         // 請務必確認這裡貼的是 pub?output=csv 的連結
-        static string userConfigCsvUrl = "這裡貼上你的_GOOGLE_SHEET_CSV_發布網址";
+        static string userConfigCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjAdjergagVBidinxnQhq9c7hf64SEyOgOX85HtE4tNUvtlKVHTZr8wB6TUp5pVaS92fMp8ZhMfiny/pub?gid=1519632381&single=true&output=csv";
 
         static List<string> myKeywords = new List<string>();
         static List<string> excludeKeywords = new List<string>();
@@ -112,3 +112,4 @@ namespace NTUJobHunter
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
