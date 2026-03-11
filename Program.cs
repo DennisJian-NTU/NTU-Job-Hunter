@@ -23,8 +23,23 @@ static async Task Main(string[] args)
     Console.WriteLine("🚀 [Uni-Ask Cloud Hunter] 啟動中...");
     await LoadCloudConfigs();
     
-    // 強制手寫測試對象
-    await ScanSite(new SiteConfig { Name = "PTT-TEST", Url = "https://www.ptt.cc/atom/NTU-Job.xml" });
+    // 這裡就是你要修改的地方！
+    var targets = new List<SiteConfig> {
+        // 1. 改用 RSSHub 的網址
+        new SiteConfig { 
+            Name = "PTT-Job", 
+            Url = "https://rsshub.app/ptt/board/NTU-Job" 
+        },
+        // 2. 台大官網通常不會擋 GitHub，維持原樣即可
+        new SiteConfig { 
+            Name = "NTU-Spotlight", 
+            Url = "https://www.ntu.edu.tw/spotlight/index.html" 
+        }
+    };
+
+    foreach (var site in targets) {
+        await ScanSite(site);
+    }
     
     Console.WriteLine("✅ 任務完成。");
 }
@@ -49,46 +64,38 @@ static async Task Main(string[] args)
             } catch (Exception ex) { Console.WriteLine($"⚠️ 同步失敗: {ex.Message}"); }
         }
 
-        static async Task ScanSite(SiteConfig site)
+static async Task ScanSite(SiteConfig site)
 {
-    Console.WriteLine($"🌐 開始掃描網址: {site.Url}");
+    Console.WriteLine($"🌐 透過中間人掃描: {site.Name}");
     try {
-        // --- 關鍵修正：建立一個無視 SSL 錯誤的 Handler ---
-        var handler = new HttpClientHandler()
-        {
-            // 這行會強制接受所有 SSL 憑證，這在爬蟲環境是標配
-            ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
-            AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
-        };
-
-        using (var client = new HttpClient(handler)) {
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        using (var client = new HttpClient()) {
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
             
             var response = await client.GetAsync(site.Url);
             Console.WriteLine($"📡 連線狀態: {response.StatusCode}");
             
-            // ... 後續解析 XML 的邏輯 ...
             string content = await response.Content.ReadAsStringAsync();
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(content);
 
-            var nodes = doc.DocumentNode.SelectNodes("//entry"); 
+            // RSSHub 的標籤是 item
+            var nodes = site.Name.Contains("PTT") ? doc.DocumentNode.SelectNodes("//item") : doc.DocumentNode.SelectNodes("//a");
+            
             if (nodes == null) {
-                Console.WriteLine("⚠️ 找不到任何 <entry> 標籤！");
+                Console.WriteLine("⚠️ 沒抓到資料，可能是中間人忙線中");
                 return;
             }
-            Console.WriteLine($"📝 找到 {nodes.Count} 篇文章，開始比對...");
 
+            Console.WriteLine($"📝 找到 {nodes.Count} 筆內容，比對中...");
             foreach (var node in nodes) {
-                string title = node.SelectSingleNode(".//title")?.InnerText ?? "無標題";
-                string href = node.SelectSingleNode(".//link")?.Attributes["href"]?.Value ?? "";
-                await CheckAndNotify(site.Name, title.Trim(), href);
+                // RSSHub 的標題在 title，連結在 link
+                string title = site.Name.Contains("PTT") ? node.SelectSingleNode(".//title")?.InnerText : node.InnerText;
+                string href = site.Name.Contains("PTT") ? node.SelectSingleNode(".//link")?.InnerText : node.Attributes["href"]?.Value;
+
+                await CheckAndNotify(site.Name, title?.Trim(), href);
             }
         }
-    } catch (Exception ex) { 
-        Console.WriteLine($"❌ 異常詳情: {ex.Message}");
-        if (ex.InnerException != null) Console.WriteLine($"🔍 內層錯誤: {ex.InnerException.Message}");
-    }
+    } catch (Exception ex) { Console.WriteLine($"❌ 異常: {ex.Message}"); }
 }
 
         // 這是你剛才漏掉的「心臟零件」
@@ -116,6 +123,7 @@ static async Task Main(string[] args)
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
