@@ -51,13 +51,23 @@ static async Task Main(string[] args)
 
         static async Task ScanSite(SiteConfig site)
 {
-    Console.WriteLine($"🌐 開始掃描網址: {site.Url}"); // 如果這行沒印出來，就是 Main 呼叫失敗
+    Console.WriteLine($"🌐 開始掃描網址: {site.Url}");
     try {
-        using (var client = new HttpClient()) {
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+        // --- 關鍵修正：建立一個無視 SSL 錯誤的 Handler ---
+        var handler = new HttpClientHandler()
+        {
+            // 這行會強制接受所有 SSL 憑證，這在爬蟲環境是標配
+            ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
+            AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+        };
+
+        using (var client = new HttpClient(handler)) {
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            
             var response = await client.GetAsync(site.Url);
             Console.WriteLine($"📡 連線狀態: {response.StatusCode}");
             
+            // ... 後續解析 XML 的邏輯 ...
             string content = await response.Content.ReadAsStringAsync();
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(content);
@@ -72,10 +82,13 @@ static async Task Main(string[] args)
             foreach (var node in nodes) {
                 string title = node.SelectSingleNode(".//title")?.InnerText ?? "無標題";
                 string href = node.SelectSingleNode(".//link")?.Attributes["href"]?.Value ?? "";
-                await CheckAndNotify(site.Name, title, href);
+                await CheckAndNotify(site.Name, title.Trim(), href);
             }
         }
-    } catch (Exception ex) { Console.WriteLine($"❌ 異常: {ex.Message}"); }
+    } catch (Exception ex) { 
+        Console.WriteLine($"❌ 異常詳情: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"🔍 內層錯誤: {ex.InnerException.Message}");
+    }
 }
 
         // 這是你剛才漏掉的「心臟零件」
@@ -103,6 +116,7 @@ static async Task Main(string[] args)
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
