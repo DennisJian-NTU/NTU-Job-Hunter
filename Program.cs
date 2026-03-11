@@ -18,26 +18,16 @@ namespace NTUJobHunter
         static List<string> excludeKeywords = new List<string>();
         static HashSet<string> sentLinks = new HashSet<string>();
 
-        static async Task Main(string[] args)
-        {
-            Console.WriteLine("🚀 [Uni-Ask Cloud Hunter] 啟動中...");
-            if (string.IsNullOrEmpty(lineToken)) {
-                Console.WriteLine("❌ 找不到 LINE_TOKEN");
-                return;
-            }
-
-            await LoadCloudConfigs();
-            
-            var targets = new List<SiteConfig> {
-                new SiteConfig { Name = "PTT-Job", Url = "https://www.ptt.cc/atom/NTU-Job.xml" },
-                new SiteConfig { Name = "NTU-Spotlight", Url = "https://www.ntu.edu.tw/spotlight/index.html" }
-            };
-
-            foreach (var site in targets) {
-                await ScanSite(site);
-            }
-            Console.WriteLine("✅ 任務完成。");
-        }
+static async Task Main(string[] args)
+{
+    Console.WriteLine("🚀 [Uni-Ask Cloud Hunter] 啟動中...");
+    await LoadCloudConfigs();
+    
+    // 強制手寫測試對象
+    await ScanSite(new SiteConfig { Name = "PTT-TEST", Url = "https://www.ptt.cc/atom/NTU-Job.xml" });
+    
+    Console.WriteLine("✅ 任務完成。");
+}
 
         static async Task LoadCloudConfigs() {
             try {
@@ -59,33 +49,34 @@ namespace NTUJobHunter
             } catch (Exception ex) { Console.WriteLine($"⚠️ 同步失敗: {ex.Message}"); }
         }
 
-        static async Task ScanSite(SiteConfig site) {
-            try {
-                using (var client = new HttpClient()) {
-                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                    var response = await client.GetAsync(site.Url);
-                    if (!response.IsSuccessStatusCode) return;
-                    
-                    string content = await response.Content.ReadAsStringAsync();
-                    HtmlDocument doc = new HtmlDocument();
-                    doc.LoadHtml(content);
+        static async Task ScanSite(SiteConfig site)
+{
+    Console.WriteLine($"🌐 開始掃描網址: {site.Url}"); // 如果這行沒印出來，就是 Main 呼叫失敗
+    try {
+        using (var client = new HttpClient()) {
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+            var response = await client.GetAsync(site.Url);
+            Console.WriteLine($"📡 連線狀態: {response.StatusCode}");
+            
+            string content = await response.Content.ReadAsStringAsync();
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(content);
 
-                    // PTT 用 entry 解析，台大用 a 解析
-                    var nodes = site.Name.Contains("PTT") ? doc.DocumentNode.SelectNodes("//entry") : doc.DocumentNode.SelectNodes("//a");
-                    if (nodes == null) return;
+            var nodes = doc.DocumentNode.SelectNodes("//entry"); 
+            if (nodes == null) {
+                Console.WriteLine("⚠️ 找不到任何 <entry> 標籤！");
+                return;
+            }
+            Console.WriteLine($"📝 找到 {nodes.Count} 篇文章，開始比對...");
 
-                    foreach (var node in nodes) {
-                        string title = site.Name.Contains("PTT") ? node.SelectSingleNode(".//title")?.InnerText : node.InnerText;
-                        string href = site.Name.Contains("PTT") ? node.SelectSingleNode(".//link")?.Attributes["href"]?.Value : node.Attributes["href"]?.Value;
-
-                        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(href)) continue;
-
-                        string fullLink = href.StartsWith("http") ? href : new Uri(new Uri(site.Url), href).AbsoluteUri;
-                        await CheckAndNotify(site.Name, title.Trim(), fullLink);
-                    }
-                }
-            } catch { }
+            foreach (var node in nodes) {
+                string title = node.SelectSingleNode(".//title")?.InnerText ?? "無標題";
+                string href = node.SelectSingleNode(".//link")?.Attributes["href"]?.Value ?? "";
+                await CheckAndNotify(site.Name, title, href);
+            }
         }
+    } catch (Exception ex) { Console.WriteLine($"❌ 異常: {ex.Message}"); }
+}
 
         // 這是你剛才漏掉的「心臟零件」
         static async Task CheckAndNotify(string siteName, string title, string link) {
@@ -112,5 +103,6 @@ namespace NTUJobHunter
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
