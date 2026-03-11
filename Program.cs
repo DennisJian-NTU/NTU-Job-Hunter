@@ -90,7 +90,7 @@ namespace NTUJobHunter
         // 這是你剛才漏掉的「心臟零件」
         static async Task CheckAndNotify(string siteName, string title, string link) {
             string lowerTitle = title.ToLower();
-            bool hasKey = myKeywords.Any(k => lowerTitle.Contains(k));
+            bool hasKey = myKeywords.Any(k => lowerTitle.Contains(k.Trim().ToLower()));
             bool hasExclude = excludeKeywords.Any(e => lowerTitle.Contains(e));
 
             if (hasKey && !hasExclude && !sentLinks.Contains(link)) {
@@ -112,4 +112,5 @@ namespace NTUJobHunter
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
