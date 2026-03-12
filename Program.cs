@@ -34,20 +34,31 @@ namespace NTUJobHunter
             Console.WriteLine("✅ 任務完成。");
         }
 
-        static async Task LoadCloudConfigs() {
-            try {
-                using (var client = new HttpClient()) {
-                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                    string csvContent = await client.GetStringAsync(userConfigCsvUrl);
-                    var lines = csvContent.Split('\n');
-                    if (lines.Length > 1) {
-                        myKeywords = lines[1].Split(',').Select(k => k.Trim()).ToList();
-                        Console.WriteLine($"📊 同步完成。關鍵字：{string.Join(", ", myKeywords)}");
-                    }
+static async Task LoadCloudConfigs() {
+    try {
+        using (var client = new HttpClient()) {
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+            string csvContent = await client.GetStringAsync(userConfigCsvUrl);
+            
+            // 修正：處理換行符號
+            var rows = csvContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            // 我們要找的是第 2 行 (索引 1)
+            if (rows.Length > 1) {
+                var columns = rows[1].Split(',');
+                
+                // 根據你的截圖，「訂閱關鍵字」是在第 3 欄 (索引 2)
+                if (columns.Length > 2) {
+                    string rawKeywords = columns[2].Trim();
+                    myKeywords = rawKeywords.Split(';').Select(k => k.Trim()).ToList();
+                    Console.WriteLine($"📊 同步成功！抓取到關鍵字：{string.Join(", ", myKeywords)}");
                 }
-            } catch (Exception ex) { Console.WriteLine($"⚠️ CSV 同步失敗: {ex.Message}"); }
+            }
         }
-
+    } catch (Exception ex) { 
+        Console.WriteLine($"⚠️ CSV 同步失敗: {ex.Message}"); 
+    }
+}
         static async Task ScanSite(SiteConfig site) {
             Console.WriteLine($"🌐 [Uni-Ask] 正在進行自體循環測試...");
             try {
@@ -92,3 +103,4 @@ namespace NTUJobHunter
         public string Url { get; set; }
     }
 }
+
