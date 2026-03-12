@@ -27,8 +27,8 @@ static async Task Main(string[] args)
     var targets = new List<SiteConfig> {
         // 1. 改用 RSSHub 的網址
         new SiteConfig { 
-            Name = "PTT-Job", 
-            Url = "https://rsshub.app/ptt/board/NTU-Job" 
+            Name = "NTU-Board", 
+            Url = "https://advisory.ntu.edu.tw/CMS/Board/1" 
         },
         // 2. 台大官網通常不會擋 GitHub，維持原樣即可
         new SiteConfig { 
@@ -73,6 +73,13 @@ static async Task ScanSite(SiteConfig site)
             
             var response = await client.GetAsync(site.Url);
             Console.WriteLine($"📡 連線狀態: {response.StatusCode}");
+
+            // 關鍵修正：如果不是 200 OK，就直接結束，不要去抓錯誤頁面的連結
+if (!response.IsSuccessStatusCode) 
+{
+    Console.WriteLine($"   ⚠️ 網頁讀取失敗，跳過解析。");
+    return; 
+}
             
             string content = await response.Content.ReadAsStringAsync();
             HtmlDocument doc = new HtmlDocument();
@@ -138,6 +145,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
