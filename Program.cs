@@ -10,7 +10,7 @@ namespace NTUJobHunter
     class Program
     {
         // 1. 請務必換成你 Google 試算表「發布到網路」的 CSV 連結
-        static string userConfigCsvUrl = "你的CSV網址";
+        static string userConfigCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjAdjergagVBidinxnQhq9c7hf64SEyOgOX85HtE4tNUvtlKVHTZr8wB6TUp5pVaS92fMp8ZhMfiny/pub?gid=1519632381&single=true&output=csv";
         
         static List<string> myKeywords = new List<string>();
         static HashSet<string> sentLinks = new HashSet<string>();
@@ -130,3 +130,4 @@ namespace NTUJobHunter
         public string Url { get; set; }
     }
 }
+
