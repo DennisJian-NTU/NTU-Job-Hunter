@@ -27,7 +27,7 @@ static async Task Main(string[] args)
 var targets = new List<SiteConfig> {
     new SiteConfig { 
         Name = "GitHub-Internship", 
-        Url = "https://raw.githubusercontent.com/tw-intern/awesome-taiwan-internships/master/README.md" 
+        Url = "https://raw.githubusercontent.com/tw-intern/awesome-taiwan-internships/main/README.md" 
     }
 };
 
@@ -129,6 +129,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
