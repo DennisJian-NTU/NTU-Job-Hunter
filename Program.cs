@@ -110,25 +110,39 @@ if (hasKey && !hasExclude) {
 }
 }
 
-        static async Task SendLineMessage(string msg) {
-            // 1. 偵錯：確認程式有沒有抓到 Secrets
-    if (string.IsNullOrEmpty(lineToken)) {
-        Console.WriteLine("❌ 偵錯：lineToken 是空的！請檢查 GitHub Secrets 是否傳遞正確。");
-        return;
-    } else {
-        Console.WriteLine($"✅ 偵錯：已讀取到 Token，前四碼為: {lineToken.Substring(0, 4)}");
-    }
-            try {
-                using (var client = new HttpClient()) {
-                    client.DefaultRequestHeaders.Add("Authorization", "Bearer " + lineToken);
-                    var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("message", msg) });
-                    await client.PostAsync("https://notify-api.line.me/api/notify", content);
-                }
-            } catch { }
+static async Task SendLineMessage(string msg) {
+    // 從 Secrets 讀取 Token 和你的 User ID
+    string channelToken = Environment.GetEnvironmentVariable("LINE_TOKEN"); // 剛才那串 B1UE
+    string userId = Environment.GetEnvironmentVariable("LINE_USER_ID");      // U 開頭的 ID
+
+    using (var client = new HttpClient()) {
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {channelToken}");
+
+        // Messaging API 需要特定的 JSON 格式
+        var payload = new {
+            to = userId,
+            messages = new[] {
+                new { type = "text", text = msg }
+            }
+        };
+
+        var content = new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(payload),
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await client.PostAsync("https://api.line.me/v2/bot/message/push", content);
+        
+        if (response.IsSuccessStatusCode) {
+            Console.WriteLine("✅ [Messaging API] 訊息發送成功！");
+        } else {
+            string error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"❌ 發送失敗：{response.StatusCode}, 詳情: {error}");
         }
     }
-    class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
