@@ -99,15 +99,15 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     bool hasExclude = excludeKeywords.Any(e => cleanTitle.Contains(e.Trim().ToLower()));
 
     if (hasKey && !hasExclude) {
-        if (!sentLinks.Contains(link)) {
+        //if (!sentLinks.Contains(link)) {
             Console.WriteLine($"   ✨ [命中成功]：{title}");
             await SendLineMessage($"\n🌟 [{siteName}] 發現好缺！\n\n標題：{title}\n連結：{link}");
-            sentLinks.Add(link);
-        } else {
+        //sentLinks.Add(link);
+     //   } else {
             Console.WriteLine("   ⏭️ 此連結已發送過，跳過。");
-        }
-    } else {
-        Console.WriteLine("   ❌ 關鍵字不匹配。");
+    //    }
+ //   } else {
+      //  Console.WriteLine("   ❌ 關鍵字不匹配。");
     }
 }
 
@@ -123,6 +123,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
