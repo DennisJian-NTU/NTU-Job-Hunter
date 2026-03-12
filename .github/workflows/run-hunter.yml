@@ -21,6 +21,6 @@ jobs:
     - name: 🚀 執行獵人程式
       env:
         # 這裡會從你設定的 Secrets 抓取 LINE Token
-LINE_TOKEN: ${{ secrets.LINE_TOKEN }}      # 這行是關鍵！
+          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}      # 這行是關鍵！
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}  # 這行也是！
       run: dotnet run
