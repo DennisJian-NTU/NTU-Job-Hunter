@@ -99,17 +99,32 @@ static async Task ScanSite(SiteConfig site)
 }
 
         // 這是你剛才漏掉的「心臟零件」
-        static async Task CheckAndNotify(string siteName, string title, string link) {
-            string lowerTitle = title.ToLower();
-            bool hasKey = myKeywords.Any(k => lowerTitle.Contains(k.Trim().ToLower()));
-            bool hasExclude = excludeKeywords.Any(e => lowerTitle.Contains(e));
+static async Task CheckAndNotify(string siteName, string title, string link) {
+    if (string.IsNullOrEmpty(title)) return;
 
-            if (hasKey && !hasExclude && !sentLinks.Contains(link)) {
-                Console.WriteLine($"✨ 命中：{title}");
-                await SendLineMessage($"\n🌟 [{siteName}] 發現好缺！\n\n標題：{title}\n連結：{link}");
-                sentLinks.Add(link);
-            }
+    // 1. 強力清洗：轉小寫、去前後空白、去掉內部的換行
+    string cleanTitle = title.Replace("\r", "").Replace("\n", "").Trim().ToLower();
+    
+    // 2. 偵錯日誌：讓我們看看獵人到底在比對什麼
+    Console.WriteLine($"   🧐 正在比對標題: [{cleanTitle}]");
+    Console.WriteLine($"   🔑 目前關鍵字: {string.Join(", ", myKeywords)}");
+
+    // 3. 執行比對
+    bool hasKey = myKeywords.Any(k => cleanTitle.Contains(k.Trim().ToLower()));
+    bool hasExclude = excludeKeywords.Any(e => cleanTitle.Contains(e.Trim().ToLower()));
+
+    if (hasKey && !hasExclude) {
+        if (!sentLinks.Contains(link)) {
+            Console.WriteLine($"   ✨ [命中成功]：{title}");
+            await SendLineMessage($"\n🌟 [{siteName}] 發現好缺！\n\n標題：{title}\n連結：{link}");
+            sentLinks.Add(link);
+        } else {
+            Console.WriteLine("   ⏭️ 此連結已發送過，跳過。");
         }
+    } else {
+        Console.WriteLine("   ❌ 關鍵字不匹配。");
+    }
+}
 
         static async Task SendLineMessage(string msg) {
             try {
@@ -123,6 +138,7 @@ static async Task ScanSite(SiteConfig site)
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
