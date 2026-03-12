@@ -94,13 +94,22 @@ if (!response.IsSuccessStatusCode)
             }
 
             Console.WriteLine($"📝 找到 {nodes.Count} 筆內容，比對中...");
-            foreach (var node in nodes) {
-                // RSSHub 的標題在 title，連結在 link
-                string title = site.Name.Contains("PTT") ? node.SelectSingleNode(".//title")?.InnerText : node.InnerText;
-                string href = site.Name.Contains("PTT") ? node.SelectSingleNode(".//link")?.InnerText : node.Attributes["href"]?.Value;
+foreach (var node in nodes) {
+    // 1. 抓取標題文字：優先抓 InnerText，如果太短就跳過
+    string title = node.InnerText?.Trim() ?? "";
+    string href = node.Attributes["href"]?.Value ?? "";
 
-                await CheckAndNotify(site.Name, title?.Trim(), href);
-            }
+    // 2. 排除掉抓到空內容或是抓到網址本身的情況
+    if (string.IsNullOrEmpty(title) || title.Length < 2 || title.StartsWith("http")) {
+        continue; 
+    }
+
+    // 3. 補全連結
+    string fullLink = href.StartsWith("http") ? href : new Uri(new Uri(site.Url), href).AbsoluteUri;
+
+    // 4. 進行比對
+    await CheckAndNotify(site.Name, title, fullLink);
+}
         }
     } catch (Exception ex) { Console.WriteLine($"❌ 異常: {ex.Message}"); }
 }
@@ -145,6 +154,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
