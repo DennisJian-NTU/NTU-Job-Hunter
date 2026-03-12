@@ -26,8 +26,9 @@ static async Task Main(string[] args)
     // 這裡就是你要修改的地方！
 var targets = new List<SiteConfig> {
     new SiteConfig { 
-        Name = "GitHub-Internship", 
-        Url = "https://api.github.com/repos/tw-intern/awesome-taiwan-internships/contents/README.md" 
+        Name = "Self-Test", 
+        // 這裡換成你自己的 GitHub 帳號和專案名
+        Url = "https://raw.githubusercontent.com/DennisJian-NTU/NTU-Job-Hunter/main/Program.cs" 
     }
 };
 
@@ -129,6 +130,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
