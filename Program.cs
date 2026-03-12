@@ -25,15 +25,9 @@ static async Task Main(string[] args)
     
     // 這裡就是你要修改的地方！
 var targets = new List<SiteConfig> {
-    // 104 學生實習專區
-    new SiteConfig { 
-        Name = "104-Intern", 
-        Url = "https://www.104.com.tw/jobs/search/?ro=0&is_intern=1&expansionType=area,spec,com,job,wf,wktm&order=12&asc=0&page=1&mode=s&jobsource=2018indexpoc" 
-    },
-    // 104 兼職/打工專區 (以台北/學生為例)
-    new SiteConfig { 
-        Name = "104-PartTime", 
-        Url = "https://www.104.com.tw/jobs/search/?ro=0&jobcat=2007001000&expansionType=area,spec,com,job,wf,wktm&order=12&asc=0&page=1&mode=s&jobsource=2018indexpoc" 
+    new ListConfig { 
+        Name = "GitHub-Internship", 
+        Url = "https://raw.githubusercontent.com/tw-intern/awesome-taiwan-internships/master/README.md" 
     }
 };
 
@@ -66,49 +60,33 @@ var targets = new List<SiteConfig> {
 
 static async Task ScanSite(SiteConfig site)
 {
-    Console.WriteLine($"🌐 [Uni-Ask] 正在獵取 104 職缺: {site.Name}");
+    Console.WriteLine($"🌐 [Uni-Ask] 正在同步 GitHub 實習懶人包...");
     try {
         using (var client = new HttpClient()) {
-            // 104 必須要有完整的 User-Agent 模擬，否則會被當成機器人
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            client.DefaultRequestHeaders.Add("Referer", "https://www.104.com.tw/");
-
-            var response = await client.GetAsync(site.Url);
-            if (!response.IsSuccessStatusCode) {
-                Console.WriteLine($"   ❌ 連線失敗：{response.StatusCode}");
-                return;
-            }
-
-            string html = await response.Content.ReadAsStringAsync();
-            HtmlDocument doc = new HtmlDocument();
-            doc.LoadHtml(html);
-
-            // 104 的職缺標題通常在 class 為 js-job-link 的 <a> 標籤中
-            var nodes = doc.DocumentNode.SelectNodes("//a[contains(@class, 'js-job-link')]");
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+            string content = await client.GetStringAsync(site.Url);
             
-            if (nodes == null) {
-                Console.WriteLine("   ⚠️ 沒抓到職缺列表，可能 104 改變了網頁結構。");
-                return;
-            }
+            var lines = content.Split('\n');
+            Console.WriteLine($"🔎 讀取到 {lines.Length} 行資料，開始分析...");
 
-            Console.WriteLine($"   🔎 找到 {nodes.Count} 個職缺，進行關鍵字篩選...");
+            foreach (var line in lines) {
+                // Markdown 的連結格式通常是 [標題](連結)
+                if (line.Contains("[") && line.Contains("](") && line.Contains("http")) {
+                    // 簡單提取標題
+                    int startBracket = line.IndexOf("[") + 1;
+                    int endBracket = line.IndexOf("]");
+                    string title = line.Substring(startBracket, endBracket - startBracket);
+                    
+                    // 簡單提取連結
+                    int startUrl = line.IndexOf("(") + 1;
+                    int endUrl = line.LastIndexOf(")");
+                    string href = line.Substring(startUrl, endUrl - startUrl);
 
-            foreach (var node in nodes) {
-                string title = node.InnerText?.Trim() ?? "";
-                string href = node.Attributes["href"]?.Value ?? "";
-
-                if (string.IsNullOrEmpty(title) || href == "") continue;
-
-                // 補全 104 連結 (有時候是相對路徑)
-                string fullLink = href.StartsWith("//") ? "https:" + href : (href.StartsWith("http") ? href : "https://www.104.com.tw" + href);
-
-                // 執行比對 (這會用到我們之前寫的 CheckAndNotify)
-                await CheckAndNotify(site.Name, title, fullLink);
+                    await CheckAndNotify(site.Name, title, href);
+                }
             }
         }
-    } catch (Exception ex) { 
-        Console.WriteLine($"   ❌ 掃描異常: {ex.Message}"); 
-    }
+    } catch (Exception ex) { Console.WriteLine($"❌ 異常: {ex.Message}"); }
 }
 
         // 這是你剛才漏掉的「心臟零件」
@@ -151,6 +129,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
