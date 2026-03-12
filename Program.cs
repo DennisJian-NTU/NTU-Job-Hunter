@@ -98,17 +98,16 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     bool hasKey = myKeywords.Any(k => cleanTitle.Contains(k.Trim().ToLower()));
     bool hasExclude = excludeKeywords.Any(e => cleanTitle.Contains(e.Trim().ToLower()));
 
-    if (hasKey && !hasExclude) {
-        //if (!sentLinks.Contains(link)) {
-            Console.WriteLine($"   ✨ [命中成功]：{title}");
-            await SendLineMessage($"\n🌟 [{siteName}] 發現好缺！\n\n標題：{title}\n連結：{link}");
-        //sentLinks.Add(link);
-     //   } else {
-            Console.WriteLine("   ⏭️ 此連結已發送過，跳過。");
-    //    }
- //   } else {
-      //  Console.WriteLine("   ❌ 關鍵字不匹配。");
-    }
+if (hasKey && !hasExclude) {
+    // --- 暴力直通：不判斷連結，直接印出並發送 ---
+    Console.WriteLine($"   ✨ [命中成功]：{title}");
+    
+    // 這一行是發送 LINE 的關鍵
+    await SendLineMessage($"\n🌟 [Uni-Ask 測試] 獵人抓到代碼了！\n\n內容：{title}");
+    
+    // 暫時不需要記錄，因為我們要洗版測試
+    // sentLinks.Add(link); 
+}
 }
 
         static async Task SendLineMessage(string msg) {
@@ -123,6 +122,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
