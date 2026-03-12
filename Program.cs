@@ -61,33 +61,26 @@ var targets = new List<SiteConfig> {
 
 static async Task ScanSite(SiteConfig site)
 {
-    Console.WriteLine($"🌐 [Uni-Ask] 正在同步 GitHub 實習懶人包...");
+    Console.WriteLine($"🌐 [Uni-Ask] 正在進行自體循環測試...");
     try {
         using (var client = new HttpClient()) {
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
             string content = await client.GetStringAsync(site.Url);
             
-            var lines = content.Split('\n');
-            Console.WriteLine($"🔎 讀取到 {lines.Length} 行資料，開始分析...");
+            var lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            Console.WriteLine($"🔎 成功讀取到 {lines.Length} 行代碼，開始全面掃描...");
 
             foreach (var line in lines) {
-                // Markdown 的連結格式通常是 [標題](連結)
-                if (line.Contains("[") && line.Contains("](") && line.Contains("http")) {
-                    // 簡單提取標題
-                    int startBracket = line.IndexOf("[") + 1;
-                    int endBracket = line.IndexOf("]");
-                    string title = line.Substring(startBracket, endBracket - startBracket);
-                    
-                    // 簡單提取連結
-                    int startUrl = line.IndexOf("(") + 1;
-                    int endUrl = line.LastIndexOf(")");
-                    string href = line.Substring(startUrl, endUrl - startUrl);
+                string cleanLine = line.Trim();
+                if (string.IsNullOrEmpty(cleanLine)) continue;
 
-                    await CheckAndNotify(site.Name, title, href);
-                }
+                // 直接呼叫比對邏輯，不預設任何 Markdown 格式
+                await CheckAndNotify(site.Name, cleanLine, site.Url);
             }
         }
-    } catch (Exception ex) { Console.WriteLine($"❌ 異常: {ex.Message}"); }
+    } catch (Exception ex) { 
+        Console.WriteLine($"❌ 掃描異常: {ex.Message}"); 
+    }
 }
 
         // 這是你剛才漏掉的「心臟零件」
@@ -130,6 +123,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
