@@ -111,14 +111,17 @@ if (hasKey && !hasExclude) {
 }
 
 static async Task SendLineMessage(string msg) {
-    // 從 Secrets 讀取 Token 和你的 User ID
-    string channelToken = Environment.GetEnvironmentVariable("LINE_TOKEN"); // 剛才那串 B1UE
-    string userId = Environment.GetEnvironmentVariable("LINE_USER_ID");      // U 開頭的 ID
+    string channelToken = Environment.GetEnvironmentVariable("LINE_TOKEN");
+    string userId = Environment.GetEnvironmentVariable("LINE_USER_ID");
+
+    if (string.IsNullOrEmpty(channelToken) || string.IsNullOrEmpty(userId)) {
+        Console.WriteLine("❌ 錯誤：Token 或 UserID 遺失，請檢查 Secrets 設定。");
+        return;
+    }
 
     using (var client = new HttpClient()) {
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {channelToken}");
 
-        // Messaging API 需要特定的 JSON 格式
         var payload = new {
             to = userId,
             messages = new[] {
@@ -132,16 +135,20 @@ static async Task SendLineMessage(string msg) {
             "application/json"
         );
 
-        var response = await client.PostAsync("https://api.line.me/v2/bot/message/push", content);
-        
-        if (response.IsSuccessStatusCode) {
-            Console.WriteLine("✅ [Messaging API] 訊息發送成功！");
-        } else {
-            string error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"❌ 發送失敗：{response.StatusCode}, 詳情: {error}");
+        try {
+            var response = await client.PostAsync("https://api.line.me/v2/bot/message/push", content);
+            if (response.IsSuccessStatusCode) {
+                Console.WriteLine("✅ [Messaging API] 訊息發送成功！");
+            } else {
+                string error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ 發送失敗：{response.StatusCode}, 詳情: {error}");
+            }
+        } catch (Exception ex) {
+            Console.WriteLine($"⚠️ 發送時發生異常: {ex.Message}");
         }
     }
-}
+} // <-- 確保這個括號存在
+    }}
 
 
 
