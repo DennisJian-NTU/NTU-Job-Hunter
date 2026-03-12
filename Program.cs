@@ -111,6 +111,13 @@ if (hasKey && !hasExclude) {
 }
 
         static async Task SendLineMessage(string msg) {
+            // 1. 偵錯：確認程式有沒有抓到 Secrets
+    if (string.IsNullOrEmpty(lineToken)) {
+        Console.WriteLine("❌ 偵錯：lineToken 是空的！請檢查 GitHub Secrets 是否傳遞正確。");
+        return;
+    } else {
+        Console.WriteLine($"✅ 偵錯：已讀取到 Token，前四碼為: {lineToken.Substring(0, 4)}");
+    }
             try {
                 using (var client = new HttpClient()) {
                     client.DefaultRequestHeaders.Add("Authorization", "Bearer " + lineToken);
@@ -122,6 +129,7 @@ if (hasKey && !hasExclude) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
