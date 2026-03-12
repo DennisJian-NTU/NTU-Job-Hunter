@@ -27,7 +27,7 @@ static async Task Main(string[] args)
 var targets = new List<SiteConfig> {
     new SiteConfig { 
         Name = "GitHub-Internship", 
-        Url = "https://raw.githubusercontent.com/tw-intern/awesome-taiwan-internships/main/README.md" 
+        Url = "https://api.github.com/repos/tw-intern/awesome-taiwan-internships/contents/README.md" 
     }
 };
 
@@ -63,7 +63,7 @@ static async Task ScanSite(SiteConfig site)
     Console.WriteLine($"🌐 [Uni-Ask] 正在同步 GitHub 實習懶人包...");
     try {
         using (var client = new HttpClient()) {
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
             string content = await client.GetStringAsync(site.Url);
             
             var lines = content.Split('\n');
@@ -129,6 +129,7 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
     }
     class SiteConfig { public string Name; public string Url; }
 }
+
 
 
 
