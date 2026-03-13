@@ -22,11 +22,11 @@ namespace NTUJobHunter
             // 同步雲端設定 (關鍵字)
             await LoadCloudConfigs();
 
-            // 測試目標：抓取你自己的程式碼
 var targets = new List<SiteConfig> {
     new SiteConfig { 
-        Name = "GitHub-Internship", 
-        Url = "https://raw.githubusercontent.com/tw-intern/awesome-taiwan-internships/main/README.md" 
+        Name = "Taiwan-Intern-2026", 
+        // 這是另一個更新極快的實習清單 Raw 連結
+        Url = "https://raw.githubusercontent.com/Oatmeal-Work/Taiwan-Internships/main/README.md"
     }
 };
 
@@ -133,5 +133,6 @@ static async Task CheckAndNotify(string siteName, string title, string link) {
         public string Url { get; set; }
     }
 }
+
 
 
