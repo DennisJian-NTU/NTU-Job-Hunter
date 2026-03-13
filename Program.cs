@@ -23,12 +23,12 @@ namespace NTUJobHunter
             await LoadCloudConfigs();
 
             // 測試目標：抓取你自己的程式碼
-            var targets = new List<SiteConfig> {
-                new SiteConfig { 
-                    Name = "Self-Test", 
-                    Url = "https://raw.githubusercontent.com/DennisJian-NTU/NTU-Job-Hunter/main/Program.cs" 
-                }
-            };
+var targets = new List<SiteConfig> {
+    new SiteConfig { 
+        Name = "GitHub-Internship", 
+        Url = "https://raw.githubusercontent.com/tw-intern/awesome-taiwan-internships/main/README.md" 
+    }
+};
 
             foreach (var site in targets) {
                 await ScanSite(site);
@@ -77,18 +77,21 @@ namespace NTUJobHunter
             } catch (Exception ex) { Console.WriteLine($"❌ 掃描異常: {ex.Message}"); }
         }
 
-        static async Task CheckAndNotify(string siteName, string title, string link) {
-            if (string.IsNullOrEmpty(title) || myKeywords.Count == 0) return;
+static async Task CheckAndNotify(string siteName, string title, string link) {
+    if (string.IsNullOrEmpty(title) || myKeywords.Count == 0) return;
 
-            string cleanTitle = title.Trim().ToLower();
-            // 只要這一行含有關鍵字 (例如 string) 就命中
-            bool hasKey = myKeywords.Any(k => !string.IsNullOrEmpty(k) && cleanTitle.Contains(k.ToLower()));
+    string cleanTitle = title.Trim().ToLower();
+    bool hasKey = myKeywords.Any(k => !string.IsNullOrEmpty(k) && cleanTitle.Contains(k.ToLower()));
 
-            if (hasKey) {
-                Console.WriteLine($"   ✨ [命中成功]：{title}");
-                await SendLineMessage($"\n🌟 [Uni-Ask 測試] 獵人抓到資料了！\n\n內容：{title}");
-            }
-        }
+    // 關鍵修復：檢查這個標題是否已經發送過
+    if (hasKey && !sentLinks.Contains(title)) { 
+        Console.WriteLine($"   ✨ [命中成功]：{title}");
+        await SendLineMessage($"\n🌟 [{siteName}] 發現好缺！\n\n內容：{title}\n連結：{link}");
+        
+        // 記下這個標題，下次掃描到一模一樣的就不會再發送
+        sentLinks.Add(title); 
+    }
+}
 
         static async Task SendLineMessage(string msg) {
             // 從 GitHub Secrets 抓取這兩把鑰匙
@@ -130,4 +133,5 @@ namespace NTUJobHunter
         public string Url { get; set; }
     }
 }
+
 
